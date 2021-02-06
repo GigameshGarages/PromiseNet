@@ -23,6 +23,60 @@ contract FlashForwardLoan is FlashLoanReceiverBase {
     using SafeMath for uint256;
 
     constructor(ILendingPoolAddressesProvider _addressProvider) FlashLoanReceiverBase(_addressProvider) public {}
+    
+    
+    using SafeERC20 for IERC20;
+    using SafeERC20 for IUSDC;
+
+    IZkSync internal _zkSync;
+    IUSDC private _usdc;
+
+    constructor(
+        IZkSync zkSync,
+        IUSDC usdc,
+        uint256 chainId
+    ) public BasicMetaTransaction(chainId) {
+        _zkSync = zkSync;
+        _usdc = usdc;
+        _usdc.safeApprove(address(_zkSync), uint256(-1));
+    }
+
+    receive() external payable {}
+
+    function deposit(
+        address from,
+        address to,
+        uint256 value,
+        uint256 validAfter,
+        uint256 validBefore,
+        bytes32 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        require(value < 2**104, "Amount doesn't fit in 104 bits");
+        require(to == address(this), "Recipient is not this contract");
+
+        _usdc.transferWithAuthorization(
+            from,
+            to,
+            value,
+            validAfter,
+            validBefore,
+            nonce,
+            v,
+            r,
+            s
+        );
+
+        _zkSync.depositERC20(address(_usdc), uint104(value), from);
+    }
+
+    function claim() external {
+        address user = _msgSender();
+        _usdc.safeTransfer(user, 100 * (10**6));
+    }
+}
 
     /**
         This function is called after your contract has received the flash loaned amount
