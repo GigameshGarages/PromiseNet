@@ -1,2 +1,2 @@
-# ChimeNet
-Coherent and Convergent Smart Contracts on Harmony Ethereum Bridge
+# PromiseNet
+Flash Loan Aggregation and Credit Delegation Distribution over a Bonding Curve
